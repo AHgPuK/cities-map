@@ -91,7 +91,7 @@ Promise.resolve()
 		let altNames = alternames.split(',');
 		altNames.unshift(asciiname);
 		altNames.unshift(name);
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), id, {
+		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), {
 			name: name,
 			lat: latitude,
 			lon: longitude,

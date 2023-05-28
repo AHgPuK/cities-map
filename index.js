@@ -50,7 +50,7 @@ const DB = function () {
 		lookup: (cityName) => {
 			if (!cityName) return [];
 			const cityIds = [...alterNames[cityName.toLowerCase().trim()]];
-			return cityIds?.map(cityId => cityData[cityId]);
+			return cityIds?.map(cityId => ({id: cityId, ...cityData[cityId]}));
 		},
 
 		clear: () => {

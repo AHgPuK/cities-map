@@ -49,7 +49,7 @@ const DB = function () {
 	return {
 		lookup: (cityName) => {
 			if (!cityName) return [];
-			const cityIds = [...alterNames[cityName.toLowerCase().trim()]];
+			const cityIds = [...alterNames[cityName.toLowerCase().trim()] || []];
 			return cityIds?.map(cityId => ({id: cityId, ...cityData[cityId]}));
 		},
 
@@ -59,7 +59,7 @@ const DB = function () {
 		},
 
 		add: (names, id, data) => {
-			cityData[id] = data;
+			cityData[id] = cityData[id] || data;
 			for (let i = 0; i < names.length; i++) {
 				if (!alterNames[names[i]])
 				{

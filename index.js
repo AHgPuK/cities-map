@@ -59,13 +59,13 @@ const DB = function (unwind = unwindFunction) {
 	let promise = Deferred();
 
 	return {
-		lookup: (cityName) => {
+		lookup: (cityName, isRawData) => {
 			if (!cityName) return [];
 			const cities = [...alterNames[cityName.toLowerCase().trim()] || []];
-			 const data = cities?.map(city => {
-				 return unwind ? unwind(city) : city;
-			 });
-			 return data;
+			const data = cities?.map(city => {
+				return isRawData || !unwind ? city : unwind(city);
+			});
+			return data;
 		},
 
 		clear: () => {

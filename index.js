@@ -42,9 +42,8 @@ const Deferred = function () {
 }
 
 const unwindFunction = (data) => {
-	const [id, name, lat, lon, country] = data.split(',');
+	const [name, lat, lon, country] = data.split(',');
 	return {
-		id,
 		name,
 		lat,
 		lon,
@@ -54,34 +53,38 @@ const unwindFunction = (data) => {
 
 const DB = function (unwind = unwindFunction) {
 
-	// let cityData = {};
+	let cityData = {};
 	let alterNames = {};
 	let promise = Deferred();
 
 	return {
 		lookup: (cityName, isRawData) => {
 			if (!cityName) return [];
-			const cities = [...alterNames[cityName.toLowerCase().trim()] || []];
-			const data = cities?.map(city => {
-				return isRawData || !unwind ? city : unwind(city);
+			const ids = [...alterNames[cityName.toLowerCase().trim()] || []];
+			const data = ids?.map(id => {
+				return isRawData || !unwind ? cityData[id] : {id, ...unwind(cityData[id])};
 			});
 			return data;
 		},
 
+		getById: id => {
+			return !unwind ? cityData[id] : unwind(cityData[id]);
+		},
+
 		clear: () => {
-			// cityData = {}
+			cityData = {}
 			alterNames = {}
 		},
 
 		add: (names, id, data) => {
-			// cityData[id] = cityData[id] || data;
+			cityData[id] = cityData[id] || data;
 			for (let i = 0; i < names.length; i++) {
 				if (!alterNames[names[i]])
 				{
 					alterNames[names[i]] = new Set();
 				}
 
-				alterNames[names[i]].add(data);
+				alterNames[names[i]].add(id);
 			}
 		},
 
@@ -131,7 +134,7 @@ Promise.resolve()
 		let altNames = alternames.split(',');
 		altNames.unshift(asciiname);
 		altNames.unshift(name);
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [id, name, latitude, longitude, country].join(','));
+		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [name, latitude, longitude, country].join(','));
 	});
 
 	cities1000.end();
@@ -146,6 +149,12 @@ Promise.resolve()
 			const city = cities1000.lookup(cityName);
 			console.log(city);
 		});
+
+		const ids = [5367815,];
+		ids.map(id => {
+			const city = cities1000.getById(id);
+			console.log(city);
+		})
 
 		console.log(`Memory usage:`, getMemoryUsageJSON())
 		global.gc && global.gc();

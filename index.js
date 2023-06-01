@@ -5,10 +5,9 @@ const { once: Once } = require('node:events');
 
 async function processLineByLine(filename, cb) {
 
-	// console.time('1');
-	const fileStream = FS.createReadStream(filename);
+	let fileStream = FS.createReadStream(filename);
 
-	const rl = Readline.createInterface({
+	let rl = Readline.createInterface({
 		input: fileStream,
 		crlfDelay: Infinity
 	});
@@ -27,7 +26,9 @@ async function processLineByLine(filename, cb) {
 	}
 
 	fileStream.close();
-	// console.timeEnd('1');
+	fileStream = null;
+	rl.close();
+	rl = null;
 }
 
 const Deferred = function () {
@@ -40,33 +41,47 @@ const Deferred = function () {
 	return deferred;
 }
 
-const DB = function () {
+const unwindFunction = (data) => {
+	const [id, name, lat, lon, country] = data.split(',');
+	return {
+		id,
+		name,
+		lat,
+		lon,
+		country,
+	}
+}
 
-	let cityData = {};
+const DB = function (unwind = unwindFunction) {
+
+	// let cityData = {};
 	let alterNames = {};
 	let promise = Deferred();
 
 	return {
 		lookup: (cityName) => {
 			if (!cityName) return [];
-			const cityIds = [...alterNames[cityName.toLowerCase().trim()] || []];
-			return cityIds?.map(cityId => ({id: cityId, ...cityData[cityId]}));
+			const cities = [...alterNames[cityName.toLowerCase().trim()] || []];
+			 const data = cities?.map(city => {
+				 return unwind ? unwind(city) : city;
+			 });
+			 return data;
 		},
 
 		clear: () => {
-			cityData = {}
+			// cityData = {}
 			alterNames = {}
 		},
 
 		add: (names, id, data) => {
-			cityData[id] = cityData[id] || data;
+			// cityData[id] = cityData[id] || data;
 			for (let i = 0; i < names.length; i++) {
 				if (!alterNames[names[i]])
 				{
 					alterNames[names[i]] = new Set();
 				}
 
-				alterNames[names[i]].add(id);
+				alterNames[names[i]].add(data);
 			}
 		},
 
@@ -80,9 +95,34 @@ const DB = function () {
 	}
 }
 
+const getMemoryUsageJSON = function (epgMemory = 0) {
+	const Os = require('os');
+	var ONE_GIGABYTE = 1024 * 1024 * 1024;
+	var ONE_MEGABYTE = 1024 * 1024;
+	var totalMemory = Os.totalmem();
+	var memoryLoad = ((totalMemory - Os.freemem()) / ONE_GIGABYTE).toFixed(1);
+	totalMemory = (totalMemory / ONE_GIGABYTE).toFixed(1);
+
+	var memoryUsage = process.memoryUsage();
+
+	// var processMemoryUsage = ((memoryUsage.heapUsed + memoryUsage.rss + memoryUsage.external) / ONE_MEGABYTE).toFixed(1);
+	var processMemoryUsage = ((memoryUsage.rss) / ONE_MEGABYTE) + Number(epgMemory);
+
+	processMemoryUsage = processMemoryUsage.toFixed(1);
+
+	return {
+		processMemoryUsage,
+		memoryLoad,
+		totalMemory,
+	}
+}
+
 const cities1000 = DB();
 
 Promise.resolve()
+.then(function () {
+
+})
 .then(async function () {
 
 	await processLineByLine(Path.resolve(__dirname, 'data/cities1000.txt'), function (line) {
@@ -91,24 +131,32 @@ Promise.resolve()
 		let altNames = alternames.split(',');
 		altNames.unshift(asciiname);
 		altNames.unshift(name);
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), {
-			name: name,
-			lat: latitude,
-			lon: longitude,
-			country: country,
-		});
+		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [id, name, latitude, longitude, country].join(','));
 	});
 
 	cities1000.end();
 
 	if (process.argv[1] == __filename)
 	{
+		// cities1000.clear();
+
 		const test = ['Нагария', 'Одесса', 'London'];
 
 		test.map(cityName => {
 			const city = cities1000.lookup(cityName);
 			console.log(city);
-		})
+		});
+
+		console.log(`Memory usage:`, getMemoryUsageJSON())
+		global.gc && global.gc();
+
+		setTimeout(function () {
+			console.log(`Memory usage:`, getMemoryUsageJSON())
+		}, 5 * 1000);
+
+		setTimeout(function () {
+
+		}, 1000000);
 	}
 
 })

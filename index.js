@@ -2,6 +2,7 @@ const FS = require('fs');
 const Path = require('path');
 const Readline = require('readline');
 const { once: Once } = require('node:events');
+const DB = require('./db');
 
 async function processLineByLine(filename, cb) {
 
@@ -31,73 +32,6 @@ async function processLineByLine(filename, cb) {
 	rl = null;
 }
 
-const Deferred = function () {
-	let ful, rej;
-	const deferred = new Promise(function (f, r) {
-		ful = f, rej = r;
-	});
-	deferred.fulfill = ful;
-	deferred.reject = rej;
-	return deferred;
-}
-
-const unwindFunction = (data) => {
-	const [name, lat, lon, country] = data.split(',');
-	return {
-		name,
-		lat,
-		lon,
-		country,
-	}
-}
-
-const DB = function (unwind = unwindFunction) {
-
-	let cityData = {};
-	let alterNames = {};
-	let promise = Deferred();
-
-	return {
-		lookup: (cityName, isRawData) => {
-			if (!cityName) return [];
-			const ids = [...alterNames[cityName.toLowerCase().trim()] || []];
-			const data = ids?.map(id => {
-				return isRawData || !unwind ? cityData[id] : {id, ...unwind(cityData[id])};
-			});
-			return data;
-		},
-
-		getById: id => {
-			return !unwind ? cityData[id] : unwind(cityData[id]);
-		},
-
-		clear: () => {
-			cityData = {}
-			alterNames = {}
-		},
-
-		add: (names, id, data) => {
-			cityData[id] = cityData[id] || data;
-			for (let i = 0; i < names.length; i++) {
-				if (!alterNames[names[i]])
-				{
-					alterNames[names[i]] = new Set();
-				}
-
-				alterNames[names[i]].add(id);
-			}
-		},
-
-		wait: function () {
-			return promise;
-		},
-
-		end: function () {
-			promise.fulfill();
-		},
-	}
-}
-
 const getMemoryUsageJSON = function (epgMemory = 0) {
 	const Os = require('os');
 	var ONE_GIGABYTE = 1024 * 1024 * 1024;
@@ -120,7 +54,12 @@ const getMemoryUsageJSON = function (epgMemory = 0) {
 	}
 }
 
-const cities1000 = DB();
+const cities1000 = DB([
+	'name',
+	'lat',
+	'lon',
+	'country',
+]);
 
 Promise.resolve()
 .then(function () {
@@ -134,7 +73,7 @@ Promise.resolve()
 		let altNames = alternames.split(',');
 		altNames.unshift(asciiname);
 		altNames.unshift(name);
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [name, latitude, longitude, country].join(','));
+		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [name, latitude, longitude, country]);
 	});
 
 	cities1000.end();

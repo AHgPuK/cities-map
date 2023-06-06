@@ -1,36 +1,5 @@
-const FS = require('fs');
 const Path = require('path');
-const Readline = require('readline');
-const { once: Once } = require('node:events');
 const DB = require('./db');
-
-async function processLineByLine(filename, cb) {
-
-	let fileStream = FS.createReadStream(filename);
-
-	let rl = Readline.createInterface({
-		input: fileStream,
-		crlfDelay: Infinity
-	});
-
-	// rl.on('line', (line) => {
-	// 	// Process the line.
-	// 	cb(line);
-	// });
-	//
-	// await Once(rl, 'close');
-
-	for await (const line of rl) {
-		// Each line in the text file will be successively available here as `line`.
-		// console.log(`Line from file: ${line}`);
-		cb(line);
-	}
-
-	fileStream.close();
-	fileStream = null;
-	rl.close();
-	rl = null;
-}
 
 const getMemoryUsageJSON = function (epgMemory = 0) {
 	const Os = require('os');
@@ -67,7 +36,7 @@ Promise.resolve()
 })
 .then(async function () {
 
-	await processLineByLine(Path.resolve(__dirname, 'data/cities1000.txt'), function (line) {
+	await Lib.processLineByLine(Path.resolve(__dirname, 'data/cities1000.txt'), function (line) {
 		const fields = line.split(/\t+/);
 		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = fields;
 		let altNames = alternames.split(',');

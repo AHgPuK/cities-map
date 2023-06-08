@@ -1,10 +1,5 @@
 [
 	{
-		"name": "id",
-		"length": 4,
-		"type": "Number"
-	},
-	{
 		"name": "name",
 		"length": 65,
 		"type": "String"

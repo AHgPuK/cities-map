@@ -13,13 +13,6 @@ const DB = function (schema, cityDataBuffer) {
 	const recordSize = schema.reduce((a, f) => a + f.length, 0);
 	const recordsCount = cityDataBuffer.length / recordSize;
 
-	const unwind = (data) => {
-
-		if (data.constructor == Buffer) return Lib.createObjectFromBuffer(data);
-
-		return data;
-	}
-
 	const instance = {
 		lookup: (cityName) => {
 			if (!cityName) return [];
@@ -38,7 +31,9 @@ const DB = function (schema, cityDataBuffer) {
 			}
 
 			const offset = cityData[id] * recordSize;
-			return Lib.createObjectFromBuffer(schema, cityDataBuffer.slice(offset, offset + recordSize));
+			const data = Lib.createObjectFromBuffer(schema, cityDataBuffer.slice(offset, offset + recordSize));
+			data.id = id;
+			return data;
 		},
 
 		add: (names, id, data) => {

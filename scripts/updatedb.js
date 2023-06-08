@@ -60,11 +60,6 @@ Promise.resolve()
 
 	const schema = [
 		{
-			name: 'id',
-			length: 4, // auto
-			type: 'Number',
-		},
-		{
 			name: 'name',
 			length: maxNameLength, // auto
 			type: 'String',
@@ -94,7 +89,7 @@ Promise.resolve()
 		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = line.split(/\t+/);
 
 		const record = Lib.createBufferFromObject(schema, {
-			id: Number(id),
+			// id: Number(id),
 			name,
 			lat: latitude,
 			lon: longitude,

@@ -1,5 +1,6 @@
 const Path = require('path');
 const DB = require('./db');
+const Lib = require('./lib');
 
 const getMemoryUsageJSON = function (epgMemory = 0) {
 	const Os = require('os');
@@ -23,12 +24,10 @@ const getMemoryUsageJSON = function (epgMemory = 0) {
 	}
 }
 
-const cities1000 = DB([
-	'name',
-	'lat',
-	'lon',
-	'country',
-]);
+const cities1000 = DB(Lib.schema,
+	// Buffer.from(''),
+	require('fs').readFileSync(Path.resolve(__dirname, 'data/cities.dat')),
+);
 
 Promise.resolve()
 .then(function () {
@@ -36,13 +35,9 @@ Promise.resolve()
 })
 .then(async function () {
 
-	await Lib.processLineByLine(Path.resolve(__dirname, 'data/cities1000.txt'), function (line) {
-		const fields = line.split(/\t+/);
-		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = fields;
-		let altNames = alternames.split(',');
-		altNames.unshift(asciiname);
-		altNames.unshift(name);
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), Number(id), [name, latitude, longitude, country]);
+	await Lib.processLineByLine(Path.resolve(__dirname, 'data/altNames.txt'), function (line, index) {
+		let altNames =  line.split(',');
+		cities1000.add(altNames.map(n => n.toLowerCase().trim()), index, null);
 	});
 
 	cities1000.end();
@@ -58,11 +53,11 @@ Promise.resolve()
 			console.log(city);
 		});
 
-		const ids = [5367815,];
-		ids.map(id => {
-			const city = cities1000.getById(id);
-			console.log(city);
-		})
+		// const ids = [5367815,];
+		// ids.map(id => {
+		// 	const city = cities1000.getById(id);
+		// 	console.log(city);
+		// });
 
 		console.log(`Memory usage:`, getMemoryUsageJSON())
 		global.gc && global.gc();

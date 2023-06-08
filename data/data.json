@@ -1,6 +1,27 @@
-{
-	"name": 65,
-	"lat": 4,
-	"lon": 4,
-	"country": 2
-}
+[
+	{
+		"name": "id",
+		"length": 4,
+		"type": "Number"
+	},
+	{
+		"name": "name",
+		"length": 65,
+		"type": "String"
+	},
+	{
+		"name": "lat",
+		"length": 4,
+		"type": "Number"
+	},
+	{
+		"name": "lon",
+		"length": 4,
+		"type": "Number"
+	},
+	{
+		"name": "country",
+		"length": 2,
+		"type": "String"
+	}
+]

@@ -1,6 +1,9 @@
 const FS = require('fs');
 const Path = require('path');
 
+const ESC = '\u001B[';
+const EraseLine = ESC + 40 + 'D' + ESC + '1K';
+
 const Lib = require('../lib');
 
 Promise.resolve()
@@ -19,6 +22,22 @@ Promise.resolve()
 	})
 
 	let maxNameLength = 0;
+
+	//Sort source
+	process.stdout.write('Sorting...');
+	let lines = FS.readFileSync(source).toString().split('\n').filter(a => a).sort((a, b) => {
+		const aId = Number(a.split('\t')[0]);
+		const bId = Number(b.split('\t')[0]);
+		return aId - bId;
+	});
+
+	const recordsCount = lines.length;
+
+	FS.writeFileSync(source, lines.join('\n'));
+	lines = null;
+	console.log('Done');
+
+	console.log('Generating altNames.txt');
 	await Lib.processLineByLine(source, function (line, index) {
 		const fields = line.split(/\t+/);
 		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = fields;
@@ -27,35 +46,69 @@ Promise.resolve()
 		altNames.unshift(name);
 		altNames = [...new Set(altNames)]; // Exclude dups
 
-		FS.appendFileSync(altNamesFile, `${id},${altNames.join(',')}\n`);
+		FS.appendFileSync(altNamesFile, `${altNames.join(',')}\n`);
 
 		maxNameLength = Math.max(maxNameLength, name.length);
+
+		if (index && index % 10000 == 0)
+		{
+			process.stdout.write(`${EraseLine}${index} done...`);
+		}
 	});
 
-	const schema = {
-		name: maxNameLength,
-		lat: 4,
-		lon: 4,
-		country: 2,
-	}
+	console.log('\nDone');
+
+	const schema = [
+		{
+			name: 'id',
+			length: 4, // auto
+			type: 'Number',
+		},
+		{
+			name: 'name',
+			length: maxNameLength, // auto
+			type: 'String',
+		},
+		{
+			name: 'lat',
+			length: 4,
+			type: 'Number',
+		},
+		{
+			name: 'lon',
+			length: 4,
+			type: 'Number',
+		},
+		{
+			name: 'country',
+			length: 2,
+			type: 'String',
+		},
+	];
 
 	FS.writeFileSync(Path.resolve(__dirname, '../data/data.json'), JSON.stringify(schema, null, '\t'));
 
+	console.log('Generating cities.dat');
 	await Lib.processLineByLine(source, function (line, index) {
-		const fields = line.split(/\t+/);
-		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = fields;
 
-		let nameBuf = Buffer.alloc(schema.name, 0);
-		nameBuf.write(name);
-		let latBuf = Buffer.alloc(schema.lat, 0);
-		latBuf.writeFloatBE(latitude);
-		let lonBuf = Buffer.alloc(schema.lat, 0);
-		lonBuf.writeFloatBE(longitude);
-		let countryBuf = Buffer.alloc(schema.country, 0);
-		countryBuf.write(country);
-		const record = Buffer.concat([nameBuf, latBuf, lonBuf, countryBuf]);
+		const [id, name, asciiname, alternames, latitude, longitude, fclass, fcode, country] = line.split(/\t+/);
+
+		const record = Lib.createBufferFromObject(schema, {
+			id: Number(id),
+			name,
+			lat: latitude,
+			lon: longitude,
+			country,
+		});
 		FS.appendFileSync(dataFile, record);
+
+		if (index && index % 10000 == 0)
+		{
+			process.stdout.write(`${EraseLine}${index} done...`);
+		}
 	});
+
+	console.log('\nDone')
 
 })
 .catch(err => {

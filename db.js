@@ -1,62 +1,71 @@
-const Deferred = function () {
-	let ful, rej;
-	const deferred = new Promise(function (f, r) {
-		ful = f, rej = r;
-	});
-	deferred.fulfill = ful;
-	deferred.reject = rej;
-	return deferred;
-}
+const Lib = require('./lib');
 
 
 
-const DB = function (fields) {
+
+const DB = function (schema, cityDataBuffer) {
 
 	let cityData = {};
+	let cityDataIndex = 0;
 	let alterNames = {};
-	let promise = Deferred();
+	let promise = Lib.Deferred();
+
+	const recordSize = schema.reduce((a, f) => a + f.length, 0);
+	const recordsCount = cityDataBuffer.length / recordSize;
 
 	const unwind = (data) => {
-		// const [name, lat, lon, country] = data;
-		const res = {};
-		for (let i = 0; i < fields.length; i++) {
-			const name = fields[i];
-			res[name] = data[i];
-		}
 
-		return res;
+		if (data.constructor == Buffer) return Lib.createObjectFromBuffer(data);
+
+		return data;
 	}
 
-	return {
-		lookup: (cityName, isRawData) => {
+	const instance = {
+		lookup: (cityName) => {
 			if (!cityName) return [];
 			const ids = [...alterNames[cityName.toLowerCase().trim()] || []];
 			const data = ids?.map(id => {
-				if (!cityData[id]) return;
-				return isRawData || !unwind ? cityData[id] : {id, ...unwind(cityData[id].split(','))};
+				// if (cityData[id] === undefined) return;
+				return instance.getById(id);
 			}).filter(d => d);
 			return data;
 		},
 
 		getById: id => {
-			return !unwind ? cityData[id] : unwind(cityData[id].split(','));
-		},
+			if (cityData[id]?.constructor == Object)
+			{
+				return cityData[id];
+			}
 
-		clear: () => {
-			cityData = {}
-			alterNames = {}
+			const offset = id * recordSize;
+			return Lib.createObjectFromBuffer(schema, cityDataBuffer.slice(offset, offset + recordSize));
 		},
 
 		add: (names, id, data) => {
-			data = data.join(',');
-			cityData[id] = cityData[id] || data;
+			const isNew = cityData[cityDataIndex] === undefined;
+
+			if (cityDataIndex < recordsCount)
+			{
+				// cityData[id] = cityDataIndex;
+			}
+			else
+			{
+				// Add extra data (patches)
+				cityData[cityDataIndex] = cityData[cityDataIndex] ?? data;
+			}
+
 			for (let i = 0; i < names.length; i++) {
 				if (!alterNames[names[i]])
 				{
 					alterNames[names[i]] = new Set();
 				}
 
-				alterNames[names[i]].add(id);
+				alterNames[names[i]].add(cityDataIndex);
+			}
+
+			if (isNew)
+			{
+				cityDataIndex++;
 			}
 		},
 
@@ -68,6 +77,8 @@ const DB = function (fields) {
 			promise.fulfill();
 		},
 	}
+
+	return instance;
 }
 
 module.exports = DB;

@@ -23,19 +23,19 @@ Promise.resolve()
 
 	let maxNameLength = 0;
 
-	//Sort source
-	process.stdout.write('Sorting...');
-	let lines = FS.readFileSync(source).toString().split('\n').filter(a => a).sort((a, b) => {
-		const aId = Number(a.split('\t')[0]);
-		const bId = Number(b.split('\t')[0]);
-		return aId - bId;
-	});
-
-	const recordsCount = lines.length;
-
-	FS.writeFileSync(source, lines.join('\n'));
-	lines = null;
-	console.log('Done');
+	// //Sort source
+	// process.stdout.write('Sorting...');
+	// let lines = FS.readFileSync(source).toString().split('\n').filter(a => a).sort((a, b) => {
+	// 	const aId = Number(a.split('\t')[0]);
+	// 	const bId = Number(b.split('\t')[0]);
+	// 	return aId - bId;
+	// });
+	//
+	// const recordsCount = lines.length;
+	//
+	// FS.writeFileSync(source, lines.join('\n'));
+	// lines = null;
+	// console.log('Done');
 
 	console.log('Generating altNames.txt');
 	await Lib.processLineByLine(source, function (line, index) {
@@ -46,7 +46,7 @@ Promise.resolve()
 		altNames.unshift(name);
 		altNames = [...new Set(altNames)]; // Exclude dups
 
-		FS.appendFileSync(altNamesFile, `${altNames.join(',')}\n`);
+		FS.appendFileSync(altNamesFile, `${id},${altNames.join(',')}\n`);
 
 		maxNameLength = Math.max(maxNameLength, name.length);
 

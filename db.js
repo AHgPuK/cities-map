@@ -23,7 +23,7 @@ const DB = function (schema, cityDataBuffer) {
 	const instance = {
 		lookup: (cityName) => {
 			if (!cityName) return [];
-			const ids = [...alterNames[cityName.toLowerCase().trim()] || []];
+			const ids = (alterNames[cityName.toLowerCase().trim()] || '').split(',').filter(a => a);
 			const data = ids?.map(id => {
 				// if (cityData[id] === undefined) return;
 				return instance.getById(id);
@@ -37,30 +37,41 @@ const DB = function (schema, cityDataBuffer) {
 				return cityData[id];
 			}
 
-			const offset = id * recordSize;
+			const offset = cityData[id] * recordSize;
 			return Lib.createObjectFromBuffer(schema, cityDataBuffer.slice(offset, offset + recordSize));
 		},
 
 		add: (names, id, data) => {
-			const isNew = cityData[cityDataIndex] === undefined;
+			const isNew = cityData[id] === undefined;
 
 			if (cityDataIndex < recordsCount)
 			{
-				// cityData[id] = cityDataIndex;
+				cityData[id] = cityDataIndex;
 			}
 			else
 			{
 				// Add extra data (patches)
-				cityData[cityDataIndex] = cityData[cityDataIndex] ?? data;
+				cityData[id] = cityData[id] ?? data;
 			}
 
 			for (let i = 0; i < names.length; i++) {
-				if (!alterNames[names[i]])
-				{
-					alterNames[names[i]] = new Set();
-				}
+				// if (!alterNames[names[i]])
+				// {
+				// 	alterNames[names[i]] = new Set();
+				// }
 
-				alterNames[names[i]].add(cityDataIndex);
+				if (alterNames[names[i]])
+				{
+					const ids = new Set(alterNames[names[i]].split(','));
+					if (!ids.has('' + id))
+					{
+						alterNames[names[i]] += ',' + id;
+					}
+				}
+				else
+				{
+					alterNames[names[i]] = '' + id;
+				}
 			}
 
 			if (isNew)

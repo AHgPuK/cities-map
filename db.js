@@ -1,8 +1,5 @@
 const Lib = require('./lib');
 
-
-
-
 const DB = function (schema, cityDataBuffer) {
 
 	let cityData = {};
@@ -49,18 +46,16 @@ const DB = function (schema, cityDataBuffer) {
 				cityData[id] = cityData[id] ?? data;
 			}
 
-			for (let i = 0; i < names.length; i++) {
-				// if (!alterNames[names[i]])
-				// {
-				// 	alterNames[names[i]] = new Set();
-				// }
-
+			for (let i = 0; i < names.length; i++)
+			{
 				if (alterNames[names[i]])
 				{
-					const ids = new Set(alterNames[names[i]].split(','));
-					if (!ids.has('' + id))
+					const ids = alterNames[names[i]];
+
+					if (!ids.match(new RegExp(`\\b${id}\\b`)))
 					{
 						alterNames[names[i]] += ',' + id;
+
 					}
 				}
 				else

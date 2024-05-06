@@ -1,12 +1,28 @@
 const CITIES = require('../index');
 
+const DB_LOADED = 'DB is loaded and ready for a lookup';
+const DB_LOOKUP = 'City lookup';
+
 Promise.resolve()
 .then(async function () {
 
-	const cities = await CITIES();
+	console.time(DB_LOADED);
+	const citiesDB = await CITIES();
 
-	const res = cities.lookup('волгодонск');
+	console.timeEnd(DB_LOADED);
 
-	console.log(res);
+	const citiesToTest = [
+		'волгодонск',
+		'просто город',
+		'Dudinka',
+	]
+
+	citiesToTest.map(function (city) {
+		console.time(DB_LOOKUP);
+		const res = citiesDB.lookup(city);
+		console.timeEnd(DB_LOOKUP);
+		console.log(`City: ${city}`, res);
+	})
+
 
 })

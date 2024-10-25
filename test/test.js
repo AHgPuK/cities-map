@@ -15,6 +15,7 @@ Promise.resolve()
 		'волгодонск',
 		'просто город',
 		'Dudinka',
+		'Оффенбах',
 	]
 
 	citiesToTest.map(function (city) {

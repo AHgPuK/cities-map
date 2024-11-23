@@ -30,9 +30,6 @@ const cities1000 = DB(Lib.schema,
 );
 
 Promise.resolve()
-.then(function () {
-
-})
 .then(async function () {
 
 	await Lib.processLineByLine(Path.resolve(__dirname, 'data/altNames.txt'), function (line, index) {
@@ -42,7 +39,7 @@ Promise.resolve()
 
 	cities1000.end();
 
-	if (process.argv[1] == __filename)
+	if (require.main === module)
 	{
 		// cities1000.clear();
 

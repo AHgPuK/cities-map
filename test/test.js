@@ -16,6 +16,7 @@ Promise.resolve()
 		'просто город',
 		'Dudinka',
 		'Оффенбах',
+		'Кирьят Ата',
 	]
 
 	citiesToTest.map(function (city) {

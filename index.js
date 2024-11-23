@@ -33,8 +33,14 @@ Promise.resolve()
 .then(async function () {
 
 	await Lib.processLineByLine(Path.resolve(__dirname, 'data/altNames.txt'), function (line, index) {
-		let [id, ...altNames] =  line.split(',');
-		cities1000.add(altNames.map(n => n.toLowerCase().trim()), id, null);
+		const [id, ...altNames] =  line.split(',');
+		const names = altNames.map(n => n.toLowerCase().trim());
+		const namesLength = names.length;
+		for (let i = 0; i < namesLength; i++) {
+			const name = names[i];
+			names.push(name.replace(/-/g, ' '));
+		}
+		cities1000.add([...new Set(names)], id, null);
 	});
 
 	cities1000.end();
